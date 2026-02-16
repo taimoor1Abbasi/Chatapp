@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
+import Image from "next/image";
 
 let socket;
 
@@ -10,15 +11,13 @@ export default function Home() {
   const [chosenUsername, setChosenUsername] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     socket = io();
 
     socket.on("newIncomingMessage", (msg) => {
-      setMessages((currentMsg) => [
-        ...currentMsg,
-        { author: msg.author, message: msg.message },
-      ]);
+      setMessages((currentMsg) => [...currentMsg, msg]);
     });
 
     return () => {
@@ -28,12 +27,35 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (message && chosenUsername) {
-      socket.emit("createdMessage", { author: chosenUsername, message });
-      setMessages((currentMsg) => [
-        ...currentMsg,
-        { author: chosenUsername, message },
-      ]);
+      const newMessage = {
+        author: chosenUsername,
+        message,
+        type: "text",
+      };
+      socket.emit("createdMessage", newMessage);
+      setMessages((currentMsg) => [...currentMsg, newMessage]);
       setMessage("");
+    }
+  };
+
+  const sendImage = (file) => {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const newMessage = {
+        author: chosenUsername,
+        message: event.target.result,
+        type: "image",
+      };
+      socket.emit("createdMessage", newMessage);
+      setMessages((currentMsg) => [...currentMsg, newMessage]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      sendImage(file);
     }
   };
 
@@ -84,7 +106,18 @@ export default function Home() {
                   >
                     {msg.author}
                   </span>
-                  : {msg.message}
+                  :{" "}
+                  {msg.type === "image" ? (
+                    <Image
+                      src={msg.message}
+                      alt="Image"
+                      width={200}
+                      height={200}
+                      className="rounded-md"
+                    />
+                  ) : (
+                    msg.message
+                  )}
                 </div>
               ))}
             </div>
@@ -97,6 +130,24 @@ export default function Home() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyUp={handleKeypress}
               />
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileSelect}
+              />
+              <button
+                onClick={() => fileInputRef.current.click()}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                <Image
+                  src="/camera.svg"
+                  alt="Upload Image"
+                  width={20}
+                  height={20}
+                />
+              </button>
               <button
                 onClick={sendMessage}
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
