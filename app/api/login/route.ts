@@ -1,27 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import redis from '@/app/lib/redis';
+import { supabase } from '@/app/lib/supabase';
 import bcrypt from 'bcrypt';
 
 export async function POST(req: NextRequest) {
-  const { username, password } = await req.json();
+  const { email, password } = await req.json();
 
-  if (!username || !password) {
-    return NextResponse.json({ message: 'Username and password are required' }, { status: 400 });
+  if (!email || !password) {
+    return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
   }
 
-  const userData = await redis.hGet('users', username);
+  const { data: user, error } = await supabase
+    .from('User Data')
+    .select('*')
+    .eq('email', email)
+    .single();
 
-  if (!userData) {
-    return NextResponse.json({ message: 'Invalid username or password' }, { status: 400 });
+  if (error || !user) {
+    return NextResponse.json({ message: 'Invalid email or password' }, { status: 400 });
   }
 
-  const user = JSON.parse(userData);
-  const passwordMatch = await bcrypt.compare(password, user.password);
+  const passwordMatch = await bcrypt.compare(password, user.Password);
 
   if (!passwordMatch) {
-    return NextResponse.json({ message: 'Invalid username or password' }, { status: 400 });
+    return NextResponse.json({ message: 'Invalid email or password' }, { status: 400 });
   }
 
-  // In a real application, you would create a session or JWT here
-  return NextResponse.json({ message: 'Login successful' });
+  return NextResponse.json({ message: 'Login successful', username: user.Name });
 }

@@ -9,11 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.96.0",
     "bcrypt": "^6.0.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "redis": "^5.10.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3"
   },

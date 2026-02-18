@@ -7,6 +7,7 @@ import Image from "next/image";
 let socket;
 
 export default function Home() {
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [view, setView] = useState("signUp"); // signUp, logIn, chat
@@ -33,12 +34,13 @@ export default function Home() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, username, password }),
     });
     if (res.ok) {
       setView("logIn");
     } else {
-      alert("Sign up failed");
+      const data = await res.json();
+      alert(data.message || "Sign up failed");
     }
   };
 
@@ -48,13 +50,14 @@ export default function Home() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
+    const data = await res.json();
     if (res.ok) {
-      setChosenUsername(username);
+      setChosenUsername(data.username);
       setView("chat");
     } else {
-      alert("Login failed");
+      alert(data.message || "Login failed");
     }
   };
   
@@ -112,6 +115,13 @@ export default function Home() {
           <div className="flex flex-col items-center gap-4">
             <h1 className="text-2xl">Sign Up</h1>
             <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              className="p-2 rounded-md bg-gray-700"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
               type="text"
               placeholder="Username"
               value={username}
@@ -146,11 +156,11 @@ export default function Home() {
           <div className="flex flex-col items-center gap-4">
             <h1 className="text-2xl">Log In</h1>
             <input
-              type="text"
-              placeholder="Username"
-              value={username}
+              type="email"
+              placeholder="Email"
+              value={email}
               className="p-2 rounded-md bg-gray-700"
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               type="password"
